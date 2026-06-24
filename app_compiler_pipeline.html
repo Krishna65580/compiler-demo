@@ -1,0 +1,231 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-mono, monospace); }
+  .ac-root { padding: 1.5rem 1rem; max-width: 860px; margin: 0 auto; }
+  .ac-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  .ac-logo { width: 36px; height: 36px; background: #7c3aed; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .ac-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+  .ac-subtitle { font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-mono); }
+  .ac-badges { margin-left: auto; display: flex; gap: 6px; }
+  .badge { font-size: 10px; font-family: var(--font-mono); font-weight: 600; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+  .badge-purple { background: #1e1040; color: #a78bfa; border: 1px solid #4c1d95; }
+  .badge-green { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+  .ac-label { font-size: 10px; font-family: var(--font-mono); color: var(--color-text-tertiary); letter-spacing: 0.08em; margin-bottom: 8px; }
+  textarea { width: 100%; min-height: 90px; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 12px; font-size: 14px; color: var(--color-text-primary); resize: vertical; font-family: inherit; }
+  textarea:focus { outline: none; border-color: #7c3aed; }
+  .example-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .ex-btn { font-size: 12px; padding: 5px 10px; border: 1px solid var(--color-border-secondary); border-radius: 6px; background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: pointer; font-family: var(--font-mono); }
+  .ex-btn:hover { background: var(--color-background-primary); color: var(--color-text-primary); }
+  .compile-btn { width: 100%; margin-top: 1rem; padding: 14px; background: #7c3aed; color: #fff; border: none; border-radius: var(--border-radius-md); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; transition: background 0.15s; }
+  .compile-btn:hover:not(:disabled) { background: #6d28d9; }
+  .compile-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error-box { margin-top: 1rem; padding: 12px 14px; background: #2d0a0a; border: 1px solid #7f1d1d; border-radius: var(--border-radius-md); color: #f87171; font-size: 13px; display: none; }
+  .error-box.show { display: block; }
+  .stages-label { margin-top: 1.5rem; }
+  .stage-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); margin-top: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .stage-row:hover { border-color: var(--color-border-secondary); background: var(--color-background-secondary); }
+  .stage-num { width: 30px; height: 30px; border-radius: 50%; background: var(--color-background-secondary); border: 1px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--color-text-secondary); flex-shrink: 0; font-family: var(--font-mono); }
+  .stage-num.done { background: #14532d; border-color: #16a34a; color: #4ade80; }
+  .stage-num.error { background: #7f1d1d; border-color: #b91c1c; color: #f87171; }
+  .stage-num.running { background: #1e1040; border-color: #7c3aed; color: #a78bfa; }
+  .stage-name { flex: 1; font-size: 14px; color: var(--color-text-primary); }
+  .stage-status { font-size: 10px; font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px; }
+  .s-waiting { background: var(--color-background-secondary); color: var(--color-text-tertiary); border: 1px solid var(--color-border-tertiary); }
+  .s-running { background: #1e1040; color: #a78bfa; border: 1px solid #4c1d95; }
+  .s-done { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+  .s-error { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .output-panel { margin-top: 8px; padding: 14px; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 12px; font-family: var(--font-mono); color: var(--color-text-secondary); line-height: 1.6; white-space: pre-wrap; word-break: break-word; display: none; max-height: 280px; overflow-y: auto; }
+  .output-panel.show { display: block; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .final-out { margin-top: 1rem; background: #0c0c0c; border: 1px solid #2d2d2d; border-radius: var(--border-radius-md); padding: 16px; display: none; }
+  .final-out.show { display: block; }
+  .final-out h3 { font-size: 11px; letter-spacing: 0.08em; color: #4ade80; font-family: var(--font-mono); margin-bottom: 10px; }
+  .final-out pre { font-size: 11px; color: #d1fae5; line-height: 1.7; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow-y: auto; }
+  .copy-btn { margin-top: 8px; font-size: 11px; padding: 5px 10px; border: 1px solid #16a34a; border-radius: 6px; background: transparent; color: #4ade80; cursor: pointer; font-family: var(--font-mono); }
+  .copy-btn:hover { background: #052e16; }
+</style>
+
+<div class="ac-root">
+  <h2 class="sr-only">AppCompiler — natural language to executable app schema</h2>
+  
+  <div class="ac-header">
+    <div class="ac-logo">
+      <i class="ti ti-bolt" style="color:#fff; font-size:18px;" aria-hidden="true"></i>
+    </div>
+    <div>
+      <div class="ac-title">AppCompiler</div>
+      <div class="ac-subtitle">natural language → executable app schema</div>
+    </div>
+    <div class="ac-badges">
+      <span class="badge badge-purple">4-STAGE PIPELINE</span>
+      <span class="badge badge-green">CLAUDE-POWERED</span>
+    </div>
+  </div>
+
+  <div class="ac-label">// DESCRIBE YOUR APP</div>
+  <textarea id="appDesc" placeholder="Describe the app you want to build…">Build a CRM with login, contacts, dashboard, role-based access, and a premium plan with payments. Admins can see analytics.</textarea>
+  
+  <div class="example-btns">
+    <button class="ex-btn" onclick="setExample(0)">Example 1</button>
+    <button class="ex-btn" onclick="setExample(1)">Example 2</button>
+    <button class="ex-btn" onclick="setExample(2)">Example 3</button>
+  </div>
+
+  <button class="compile-btn" id="compileBtn" onclick="runPipeline()">
+    <i class="ti ti-bolt" aria-hidden="true"></i> Compile to App Schema
+  </button>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="stages-label ac-label" style="margin-top:1.5rem;">// PIPELINE STAGES — click any completed stage to inspect output</div>
+
+  <div id="s1" class="stage-row" onclick="toggleOutput('o1')">
+    <div class="stage-num" id="n1">1</div>
+    <div class="stage-name">Stage 1 — Intent Extraction</div>
+    <span class="stage-status s-waiting" id="st1">WAITING</span>
+  </div>
+  <div class="output-panel" id="o1"></div>
+
+  <div id="s2" class="stage-row" onclick="toggleOutput('o2')">
+    <div class="stage-num" id="n2">2</div>
+    <div class="stage-name">Stage 2 — System Design Layer</div>
+    <span class="stage-status s-waiting" id="st2">WAITING</span>
+  </div>
+  <div class="output-panel" id="o2"></div>
+
+  <div id="s3" class="stage-row" onclick="toggleOutput('o3')">
+    <div class="stage-num" id="n3">3</div>
+    <div class="stage-name">Stage 3 — Schema Generation</div>
+    <span class="stage-status s-waiting" id="st3">WAITING</span>
+  </div>
+  <div class="output-panel" id="o3"></div>
+
+  <div id="s4" class="stage-row" onclick="toggleOutput('o4')">
+    <div class="stage-num" id="n4">4</div>
+    <div class="stage-name">Stage 4 — Validation & Output</div>
+    <span class="stage-status s-waiting" id="st4">WAITING</span>
+  </div>
+  <div class="output-panel" id="o4"></div>
+
+  <div class="final-out" id="finalOut">
+    <h3>// COMPILED APP SCHEMA</h3>
+    <pre id="finalPre"></pre>
+    <button class="copy-btn" onclick="copySchema()"><i class="ti ti-copy" aria-hidden="true"></i> Copy schema</button>
+  </div>
+</div>
+
+<script>
+const examples = [
+  "Build a project management tool with tasks, sprints, teams, time tracking, Gantt chart view, and Slack notifications.",
+  "Create a marketplace for freelancers with profiles, job listings, bidding, escrow payments, and review system.",
+  "Make a SaaS analytics dashboard with multi-tenant support, custom charts, CSV export, and email reports."
+];
+
+function setExample(i) {
+  document.getElementById('appDesc').value = examples[i];
+}
+
+function toggleOutput(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+
+function setStage(n, status, text) {
+  const num = document.getElementById('n' + n);
+  const st = document.getElementById('st' + n);
+  const out = document.getElementById('o' + n);
+  num.className = 'stage-num ' + (status === 'done' ? 'done' : status === 'error' ? 'error' : status === 'running' ? 'running' : '');
+  num.innerHTML = status === 'done' ? '<i class="ti ti-check" style="font-size:14px"></i>' : status === 'error' ? '<i class="ti ti-x" style="font-size:14px"></i>' : status === 'running' ? '<span class="spinner"></span>' : n;
+  st.className = 'stage-status s-' + (status === 'waiting' ? 'waiting' : status === 'running' ? 'running' : status === 'done' ? 'done' : 'error');
+  st.textContent = status.toUpperCase();
+  if (text) { out.textContent = text; out.classList.add('show'); }
+}
+
+function showError(msg) {
+  const eb = document.getElementById('errorBox');
+  eb.textContent = '✗ ' + msg;
+  eb.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+async function callClaude(systemPrompt, userMsg) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  });
+  if (!res.ok) throw new Error('API error ' + res.status);
+  const data = await res.json();
+  return data.content.map(b => b.text || '').join('');
+}
+
+async function runPipeline() {
+  const desc = document.getElementById('appDesc').value.trim();
+  if (!desc) return;
+  hideError();
+  document.getElementById('finalOut').classList.remove('show');
+  const btn = document.getElementById('compileBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Compiling…';
+  [1,2,3,4].forEach(n => setStage(n, 'waiting', ''));
+  ['o1','o2','o3','o4'].forEach(id => { const el = document.getElementById(id); el.textContent = ''; el.classList.remove('show'); });
+
+  try {
+    setStage(1, 'running');
+    const intent = await callClaude(
+      'You are an intent extraction engine. Extract the core features, user roles, and technical requirements from an app description. Return a structured bullet list — be concise.',
+      desc
+    );
+    setStage(1, 'done', intent);
+
+    setStage(2, 'running');
+    const design = await callClaude(
+      'You are a system design expert. Given extracted intent, produce a high-level architecture: key modules, data models (list entity names + top fields), and API surface (REST endpoints). Be concise and structured.',
+      'Intent:\n' + intent
+    );
+    setStage(2, 'done', design);
+
+    setStage(3, 'running');
+    const schema = await callClaude(
+      'You are a schema generator. Convert the system design into a JSON app schema with keys: "entities" (array of {name, fields[]}), "routes" (array of {method, path, auth, description}), "roles" (array of strings), "integrations" (array of strings). Return ONLY valid JSON, no markdown.',
+      'Design:\n' + design
+    );
+    setStage(3, 'done', schema);
+
+    setStage(4, 'running');
+    let parsed;
+    try { parsed = JSON.parse(schema.replace(/```json|```/g, '').trim()); } catch(e) { parsed = null; }
+    const validation = parsed
+      ? `✓ Valid JSON schema\n✓ ${(parsed.entities||[]).length} entities\n✓ ${(parsed.routes||[]).length} routes\n✓ ${(parsed.roles||[]).length} roles\n✓ ${(parsed.integrations||[]).length} integrations\n\nSchema is ready for code generation.`
+      : '⚠ Schema generated but JSON could not be fully parsed. Inspect Stage 3 output.';
+    setStage(4, 'done', validation);
+
+    const finalPre = document.getElementById('finalPre');
+    finalPre.textContent = parsed ? JSON.stringify(parsed, null, 2) : schema;
+    document.getElementById('finalOut').classList.add('show');
+
+  } catch(err) {
+    const failedStage = [1,2,3,4].find(n => document.getElementById('st'+n).textContent === 'RUNNING') || 1;
+    setStage(failedStage, 'error');
+    showError('Stage ' + failedStage + ' failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-bolt" aria-hidden="true"></i> Compile to App Schema';
+  }
+}
+
+function copySchema() {
+  const text = document.getElementById('finalPre').textContent;
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+</script>
